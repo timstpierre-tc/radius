@@ -93,6 +93,38 @@ func TestParser(t *testing.T) {
 	}
 }
 
+func TestParserExtended(t *testing.T) {
+	parser := Parser{
+		Opener: &FileSystemOpener{
+			Root: "testdata",
+		},
+	}
+
+	d, err := parser.ParseFile("vendor_extended.dictionary")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expected := &Dictionary{
+		Attributes: []*Attribute{
+			{
+				Name: "Test-Vendor-Name",
+				OID:  OID{11.5},
+				Type: AttributeString,
+			},
+			{
+				Name: "Test-Vendor-IPv6",
+				OID:  OID{6},
+				Type: AttributeIPv6Addr,
+			},
+		},
+	}
+
+	if !reflect.DeepEqual(d, expected) {
+		t.Fatalf("got %s, expected %s", dictString(d), dictString(expected))
+	}
+}
+
 func TestParser_recursiveinclude(t *testing.T) {
 	parser := Parser{
 		Opener: &FileSystemOpener{

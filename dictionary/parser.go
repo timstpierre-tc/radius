@@ -77,11 +77,8 @@ func (p *Parser) parse(dict *Dictionary, parsedFiles map[string]struct{}, f File
 				attr *Attribute
 				err  error
 			)
-			if vendorFormat != nil {
-				attr, err = p.parseExtendedAttribute(fields, *vendorFormat)
-			} else {
-				attr, err = p.parseAttribute(fields)
-			}
+
+			attr, err = p.parseAttribute(fields)
 
 			if err != nil {
 				return &ParseError{
@@ -380,6 +377,12 @@ func (p *Parser) parseAttribute(f []string) (*Attribute, error) {
 		attr.Type = AttributeInteger64
 	case strings.EqualFold(f[3], "vsa"):
 		attr.Type = AttributeVSA
+	case strings.EqualFold(f[3], "evs"):
+		attr.Type = AttributeExtendedVSA
+	case strings.EqualFold(f[3], "extended"):
+		attr.Type = AttributeExtended
+	case strings.EqualFold(f[3], "long-extended"):
+		attr.Type = AttributeLongExtended
 	case strings.EqualFold(f[3], "ether"):
 		attr.Type = AttributeEther
 	case strings.EqualFold(f[3], "abinary"):
