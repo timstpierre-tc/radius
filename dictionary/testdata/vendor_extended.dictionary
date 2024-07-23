@@ -1,0 +1,5 @@
+VENDOR Test 32473
+BEGIN-VENDOR Test format=Extended-Vendor-Specific-1
+ATTRIBUTE Test-Vendor-Name 5 string
+Attribute Test-Vendor-IPv6 6 ipv6addr
+END-VENDOR Test
