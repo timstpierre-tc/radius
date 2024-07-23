@@ -58,6 +58,7 @@ func (p *Parser) parse(dict *Dictionary, parsedFiles map[string]struct{}, f File
 	s := bufio.NewScanner(f)
 
 	var vendorBlock *Vendor
+	var vendorFormat *AttributeType
 
 	lineNo := 1
 	for ; s.Scan(); lineNo++ {
@@ -72,7 +73,16 @@ func (p *Parser) parse(dict *Dictionary, parsedFiles map[string]struct{}, f File
 		fields := strings.Fields(line)
 		switch {
 		case (len(fields) == 4 || len(fields) == 5) && fields[0] == "ATTRIBUTE":
-			attr, err := p.parseAttribute(fields)
+			var (
+				attr *Attribute
+				err  error
+			)
+			if vendorFormat != nil {
+				attr, err = p.parseExtendedAttribute(fields, *vendorFormat)
+			} else {
+				attr, err = p.parseAttribute(fields)
+			}
+
 			if err != nil {
 				return &ParseError{
 					Inner: err,
@@ -146,7 +156,7 @@ func (p *Parser) parse(dict *Dictionary, parsedFiles map[string]struct{}, f File
 
 			dict.Vendors = append(dict.Vendors, vendor)
 
-		case len(fields) == 2 && fields[0] == "BEGIN-VENDOR":
+		case (len(fields) == 2 || len(fields) == 3) && fields[0] == "BEGIN-VENDOR":
 			// TODO: support RFC 6929 extended VSA?
 
 			if vendorBlock != nil {
@@ -170,6 +180,17 @@ func (p *Parser) parse(dict *Dictionary, parsedFiles map[string]struct{}, f File
 
 			vendorBlock = vendor
 
+			if len(fields) == 3 {
+				formatFields := strings.Split(fields[2], "=")
+				if formatFields[0] == "format" && len(formatFields) == 2 {
+					switch formatFields[1] {
+					case "Extended-Vendor-Specific-1":
+						vendorFormat = new(AttributeType)
+						*vendorFormat = AttributeExtendedVSA
+					}
+				}
+			}
+
 		case len(fields) == 2 && fields[0] == "END-VENDOR":
 			if vendorBlock == nil {
 				return &ParseError{
@@ -189,6 +210,7 @@ func (p *Parser) parse(dict *Dictionary, parsedFiles map[string]struct{}, f File
 			}
 
 			vendorBlock = nil
+			vendorFormat = nil
 
 		case len(fields) == 2 && fields[0] == "$INCLUDE":
 			if vendorBlock != nil {
@@ -294,6 +316,20 @@ func parseOID(s string) OID {
 		}
 	}
 	return o
+}
+
+func (p *Parser) parseExtendedAttribute(f []string, extendedType AttributeType) (*Attribute, error) {
+	attr, err := p.parseAttribute(f)
+	if err != nil {
+		return nil, err
+	}
+
+	switch extendedType {
+	case AttributeExtendedVSA:
+		attr.OID = OID(append([]int{int(extendedType)}, []int(attr.OID)...))
+
+	}
+	return attr, nil
 }
 
 func (p *Parser) parseAttribute(f []string) (*Attribute, error) {

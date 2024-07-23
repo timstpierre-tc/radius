@@ -58,6 +58,7 @@ const (
 	AttributeInteger64
 
 	AttributeVSA
+	AttributeExtendedVSA
 
 	AttributeEther
 	AttributeABinary
@@ -91,6 +92,8 @@ func (t AttributeType) String() string {
 
 	case AttributeVSA:
 		return "vsa"
+	case AttributeExtendedVSA:
+		return "evs"
 
 	case AttributeEther:
 		return "ether"
