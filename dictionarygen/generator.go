@@ -47,7 +47,7 @@ func (g *Generator) Generate(dict *dictionary.Dictionary) ([]byte, error) {
 		}
 
 		invalid := false
-		if len(attr.OID) != 1 {
+		if len(attr.OID) < 1 { // We may need to parse longer OIDs
 			invalid = true
 		}
 		if attr.Size.Valid {
@@ -79,7 +79,8 @@ func (g *Generator) Generate(dict *dictionary.Dictionary) ([]byte, error) {
 			baseImports["time"] = struct{}{}
 		case dictionary.AttributeShort, dictionary.AttributeInteger, dictionary.AttributeInteger64:
 			baseImports["strconv"] = struct{}{}
-		case dictionary.AttributeVSA:
+		case dictionary.AttributeVSA, dictionary.AttributeExtendedVSA:
+		case dictionary.AttributeExtended, dictionary.AttributeLongExtended:
 		case dictionary.AttributeByte:
 			baseImports["errors"] = struct{}{}
 		default:
@@ -319,7 +320,7 @@ func (g *Generator) Generate(dict *dictionary.Dictionary) ([]byte, error) {
 			g.genAttributeInteger(&w, attr, values, 32, nil)
 		case dictionary.AttributeIFID:
 			g.genAttributeIFID(&w, attr, nil)
-		case dictionary.AttributeVSA:
+		case dictionary.AttributeVSA, dictionary.AttributeExtendedVSA:
 			// skip
 		case dictionary.AttributeInteger64:
 			g.genAttributeInteger(&w, attr, values, 64, nil)
