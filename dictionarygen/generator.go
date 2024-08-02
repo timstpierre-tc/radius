@@ -11,6 +11,10 @@ import (
 	"layeh.com/radius/dictionary"
 )
 
+const (
+	RadiusPackagePrefix = "layeh.com/radius"
+)
+
 type externalAttribute struct {
 	Attribute  string
 	ImportPath string
@@ -29,9 +33,8 @@ type Generator struct {
 }
 
 func (g *Generator) Generate(dict *dictionary.Dictionary) ([]byte, error) {
-
 	attrs := make([]*dictionary.Attribute, 0, len(dict.Attributes))
-
+	var hasExtendedAttributes bool
 	ignoredAttributes := make(map[string]struct{}, len(g.IgnoredAttributes))
 	for _, attrName := range g.IgnoredAttributes {
 		ignoredAttributes[attrName] = struct{}{}
@@ -79,10 +82,17 @@ func (g *Generator) Generate(dict *dictionary.Dictionary) ([]byte, error) {
 			baseImports["time"] = struct{}{}
 		case dictionary.AttributeShort, dictionary.AttributeInteger, dictionary.AttributeInteger64:
 			baseImports["strconv"] = struct{}{}
-		case dictionary.AttributeVSA, dictionary.AttributeExtendedVSA:
-		case dictionary.AttributeExtended, dictionary.AttributeLongExtended:
+		case dictionary.AttributeVSA:
+		case dictionary.AttributeExtendedVSA1, dictionary.AttributeExtendedVSA2, dictionary.AttributeExtendedVSA3, dictionary.AttributeExtendedVSA4:
+			hasExtendedAttributes = true
+		case dictionary.AttributeLongExtendedVSA5, dictionary.AttributeLongExtendedVSA6:
+			hasExtendedAttributes = true
+		case dictionary.AttributeExtended1, dictionary.AttributeExtended2, dictionary.AttributeExtended3, dictionary.AttributeExtended4:
+			hasExtendedAttributes = true
+		case dictionary.AttributeLongExtended5, dictionary.AttributeLongExtended6:
+			hasExtendedAttributes = true
 		case dictionary.AttributeByte:
-			baseImports["errors"] = struct{}{}
+			hasExtendedAttributes = true
 		default:
 			invalid = true
 		}
@@ -149,7 +159,9 @@ func (g *Generator) Generate(dict *dictionary.Dictionary) ([]byte, error) {
 		if vendor.GetLengthOctets() != 1 || vendor.GetTypeOctets() != 1 {
 			return nil, errors.New("dictionarygen: cannot generate code for " + vendor.Name)
 		}
-
+		if vendor.ExtendedVSA {
+			hasExtendedAttributes = true
+		}
 		for _, attr := range vendor.Attributes {
 			if _, ignored := ignoredAttributes[attr.Name]; ignored {
 				continue
@@ -220,8 +232,9 @@ func (g *Generator) Generate(dict *dictionary.Dictionary) ([]byte, error) {
 			TypeOctets:   vendor.TypeOctets,
 			LengthOctets: vendor.LengthOctets,
 
-			Attributes: vendorAttributes,
-			Values:     vendorValues,
+			Attributes:  vendorAttributes,
+			Values:      vendorValues,
+			ExtendedVSA: vendor.ExtendedVSA,
 		})
 	}
 	dictionary.SortVendors(vendors)
@@ -240,10 +253,13 @@ func (g *Generator) Generate(dict *dictionary.Dictionary) ([]byte, error) {
 	}
 	if len(attrs) > 0 || len(vendors) > 0 {
 		p(&w)
-		p(&w, `	"layeh.com/radius"`)
+		p(&w, `  "`, RadiusPackagePrefix, `"`)
 	}
 	if len(vendors) > 0 {
-		p(&w, `	"layeh.com/radius/rfc2865"`)
+		p(&w, `  "`, RadiusPackagePrefix, `/rfc2865"`)
+	}
+	if hasExtendedAttributes {
+		p(&w, `  "`, RadiusPackagePrefix, `/rfc6929"`)
 	}
 	if len(externalAttributes) > 0 {
 		printedNewLine := false
@@ -320,7 +336,11 @@ func (g *Generator) Generate(dict *dictionary.Dictionary) ([]byte, error) {
 			g.genAttributeInteger(&w, attr, values, 32, nil)
 		case dictionary.AttributeIFID:
 			g.genAttributeIFID(&w, attr, nil)
-		case dictionary.AttributeVSA, dictionary.AttributeExtendedVSA:
+		case dictionary.AttributeVSA:
+			// skip
+		case dictionary.AttributeExtendedVSA1, dictionary.AttributeExtendedVSA2, dictionary.AttributeExtendedVSA3, dictionary.AttributeExtendedVSA4:
+			// skip
+		case dictionary.AttributeLongExtendedVSA5, dictionary.AttributeLongExtendedVSA6:
 			// skip
 		case dictionary.AttributeInteger64:
 			g.genAttributeInteger(&w, attr, values, 64, nil)
@@ -331,6 +351,9 @@ func (g *Generator) Generate(dict *dictionary.Dictionary) ([]byte, error) {
 
 	for _, vendor := range vendors {
 		g.genVendor(&w, vendor)
+		if vendor.ExtendedVSA {
+			g.genExtVendor(&w, vendor)
+		}
 		for _, attr := range vendor.Attributes {
 			switch attr.Type {
 			case dictionary.AttributeString, dictionary.AttributeOctets:

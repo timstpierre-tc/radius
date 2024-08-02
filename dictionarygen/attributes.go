@@ -14,7 +14,6 @@ func (g *Generator) genAttributeStringOctets(w io.Writer, attr *dictionary.Attri
 	if vendor != nil {
 		vendorIdent = identifier(vendor.Name)
 	}
-
 	p(w)
 	if !attr.HasTag() {
 		p(w, `func `, ident, `_Add(p *radius.Packet, value []byte) (err error) {`)
@@ -44,7 +43,11 @@ func (g *Generator) genAttributeStringOctets(w io.Writer, attr *dictionary.Attri
 		p(w, `	}`)
 	}
 	if vendor != nil {
-		p(w, `	return _`, vendorIdent, `_AddVendor(p, `, strconv.Itoa(attr.OID[0]), `, a)`)
+		if attr.UnderlyingType > 0 {
+			p(w, `	return _`, vendorIdent, `_AddExtVendor(p, `, strconv.Itoa(attr.OID[0]), `, `, DictExtType(attr.UnderlyingType), `, a)`)
+		} else {
+			p(w, `	return _`, vendorIdent, `_AddVendor(p, `, strconv.Itoa(attr.OID[0]), `, a)`)
+		}
 	} else {
 		p(w, `	p.Add(`, ident, `_Type, a)`)
 		p(w, `	return`)
@@ -80,7 +83,11 @@ func (g *Generator) genAttributeStringOctets(w io.Writer, attr *dictionary.Attri
 		p(w, `	}`)
 	}
 	if vendor != nil {
-		p(w, `	return _`, vendorIdent, `_AddVendor(p, `, strconv.Itoa(attr.OID[0]), `, a)`)
+		if attr.UnderlyingType > 0 {
+			p(w, `	return _`, vendorIdent, `_AddExtVendor(p, `, strconv.Itoa(attr.OID[0]), `, `, DictExtType(attr.UnderlyingType), ` ,a)`)
+		} else {
+			p(w, `	return _`, vendorIdent, `_AddVendor(p, `, strconv.Itoa(attr.OID[0]), `, a)`)
+		}
 	} else {
 		p(w, `	p.Add(`, ident, `_Type, a)`)
 		p(w, `	return`)
@@ -145,7 +152,11 @@ func (g *Generator) genAttributeStringOctets(w io.Writer, attr *dictionary.Attri
 	}
 	p(w, `	var i []byte`)
 	if vendor != nil {
-		p(w, `	for _, attr := range _`, vendorIdent, `_GetsVendor(p, `, strconv.Itoa(attr.OID[0]), `) {`)
+		if attr.UnderlyingType > 0 {
+			p(w, `	for _, attr := range _`, vendorIdent, `_GetsExtVendor(p, `, strconv.Itoa(attr.OID[0]), `, `, DictExtType(attr.UnderlyingType), `) {`)
+		} else {
+			p(w, `	for _, attr := range _`, vendorIdent, `_GetsVendor(p, `, strconv.Itoa(attr.OID[0]), `) {`)
+		}
 	} else {
 		p(w, `	for _, avp := range p.Attributes {`)
 		p(w, `		if avp.Type != `, ident, `_Type {`)
@@ -199,7 +210,11 @@ func (g *Generator) genAttributeStringOctets(w io.Writer, attr *dictionary.Attri
 	}
 	p(w, `	var i string`)
 	if vendor != nil {
-		p(w, `	for _, attr := range _`, vendorIdent, `_GetsVendor(p, `, strconv.Itoa(attr.OID[0]), `) {`)
+		if attr.UnderlyingType > 0 {
+			p(w, `	for _, attr := range _`, vendorIdent, `_GetsExtVendor(p, `, strconv.Itoa(attr.OID[0]), `, `, DictExtType(attr.UnderlyingType), `) {`)
+		} else {
+			p(w, `	for _, attr := range _`, vendorIdent, `_GetsVendor(p, `, strconv.Itoa(attr.OID[0]), `) {`)
+		}
 	} else {
 		p(w, `	for _, avp := range p.Attributes {`)
 		p(w, `		if avp.Type != `, ident, `_Type {`)
@@ -260,7 +275,11 @@ func (g *Generator) genAttributeStringOctets(w io.Writer, attr *dictionary.Attri
 		}
 	}
 	if vendor != nil {
-		p(w, `	a, ok  := _`, vendorIdent, `_LookupVendor(p, `, strconv.Itoa(attr.OID[0]), `)`)
+		if attr.UnderlyingType > 0 {
+			p(w, `	a, ok  := _`, vendorIdent, `_LookupExtVendor(p, `, strconv.Itoa(attr.OID[0]), `, `, DictExtType(attr.UnderlyingType), `)`)
+		} else {
+			p(w, `	a, ok  := _`, vendorIdent, `_LookupVendor(p, `, strconv.Itoa(attr.OID[0]), `)`)
+		}
 	} else {
 		p(w, `	a, ok  := p.Lookup(`, ident, `_Type)`)
 	}
@@ -304,7 +323,11 @@ func (g *Generator) genAttributeStringOctets(w io.Writer, attr *dictionary.Attri
 		}
 	}
 	if vendor != nil {
-		p(w, `	a, ok  := _`, vendorIdent, `_LookupVendor(p, `, strconv.Itoa(attr.OID[0]), `)`)
+		if attr.UnderlyingType > 0 {
+			p(w, `	a, ok  := _`, vendorIdent, `_LookupExtVendor(p, `, strconv.Itoa(attr.OID[0]), `, `, DictExtType(attr.UnderlyingType), `)`)
+		} else {
+			p(w, `	a, ok  := _`, vendorIdent, `_LookupVendor(p, `, strconv.Itoa(attr.OID[0]), `)`)
+		}
 	} else {
 		p(w, `	a, ok  := p.Lookup(`, ident, `_Type)`)
 	}
@@ -370,7 +393,11 @@ func (g *Generator) genAttributeStringOctets(w io.Writer, attr *dictionary.Attri
 		p(w, `	}`)
 	}
 	if vendor != nil {
-		p(w, `	return _`, vendorIdent, `_SetVendor(p, `, strconv.Itoa(attr.OID[0]), `, a)`)
+		if attr.UnderlyingType > 0 {
+			p(w, `	return _`, vendorIdent, `_SetExtVendor(p, `, strconv.Itoa(attr.OID[0]), `, `, DictExtType(attr.UnderlyingType), `, a)`)
+		} else {
+			p(w, `	return _`, vendorIdent, `_SetVendor(p, `, strconv.Itoa(attr.OID[0]), `, a)`)
+		}
 	} else {
 		p(w, `	p.Set(`, ident, `_Type, a)`)
 		p(w, `	return`)
@@ -406,7 +433,11 @@ func (g *Generator) genAttributeStringOctets(w io.Writer, attr *dictionary.Attri
 		p(w, `	}`)
 	}
 	if vendor != nil {
-		p(w, `	return _`, vendorIdent, `_SetVendor(p, `, strconv.Itoa(attr.OID[0]), `, a)`)
+		if attr.UnderlyingType > 0 {
+			p(w, `	return _`, vendorIdent, `_SetExtVendor(p, `, strconv.Itoa(attr.OID[0]), `, `, DictExtType(attr.UnderlyingType), `, a)`)
+		} else {
+			p(w, `	return _`, vendorIdent, `_SetVendor(p, `, strconv.Itoa(attr.OID[0]), `, a)`)
+		}
 	} else {
 		p(w, `	p.Set(`, ident, `_Type, a)`)
 		p(w, `	return`)
@@ -416,7 +447,11 @@ func (g *Generator) genAttributeStringOctets(w io.Writer, attr *dictionary.Attri
 	p(w)
 	p(w, `func `, ident, `_Del(p *radius.Packet) {`)
 	if vendor != nil {
-		p(w, `	_`, vendorIdent, `_DelVendor(p, `, strconv.Itoa(attr.OID[0]), `)`)
+		if attr.UnderlyingType > 0 {
+			p(w, `	_`, vendorIdent, `_DelExtVendor(p, `, strconv.Itoa(attr.OID[0]), `, `, DictExtType(attr.UnderlyingType), `)`)
+		} else {
+			p(w, `	_`, vendorIdent, `_DelVendor(p, `, strconv.Itoa(attr.OID[0]), `)`)
+		}
 	} else {
 		p(w, `	p.Attributes.Del(`, ident, `_Type)`)
 	}
@@ -562,7 +597,11 @@ func (g *Generator) genAttributeIPAddr(w io.Writer, attr *dictionary.Attribute, 
 		genNewTunnelPassword(w, `a`)
 	}
 	if vendor != nil {
-		p(w, `	return _`, vendorIdent, `_AddVendor(p, `, strconv.Itoa(attr.OID[0]), `, a)`)
+		if attr.UnderlyingType > 0 {
+			p(w, `	return _`, vendorIdent, `_AddExtVendor(p, `, strconv.Itoa(attr.OID[0]), `, `, DictExtType(attr.UnderlyingType), ` ,a)`)
+		} else {
+			p(w, `	return _`, vendorIdent, `_AddVendor(p, `, strconv.Itoa(attr.OID[0]), `, a)`)
+		}
 	} else {
 		p(w, `	p.Add(`, ident, `_Type, a)`)
 		p(w, `	return`)
@@ -588,7 +627,11 @@ func (g *Generator) genAttributeIPAddr(w io.Writer, attr *dictionary.Attribute, 
 	}
 	p(w, `	var i net.IP`)
 	if vendor != nil {
-		p(w, `	for _, attr := range _`, vendorIdent, `_GetsVendor(p, `, strconv.Itoa(attr.OID[0]), `) {`)
+		if attr.UnderlyingType > 0 {
+			p(w, `	for _, attr := range _`, vendorIdent, `_GetsExtVendor(p, `, strconv.Itoa(attr.OID[0]), `, `, DictExtType(attr.UnderlyingType), `) {`)
+		} else {
+			p(w, `	for _, attr := range _`, vendorIdent, `_GetsVendor(p, `, strconv.Itoa(attr.OID[0]), `) {`)
+		}
 	} else {
 		p(w, `	for _, avp := range p.Attributes {`)
 		p(w, `		if avp.Type != `, ident, `_Type {`)
@@ -622,7 +665,11 @@ func (g *Generator) genAttributeIPAddr(w io.Writer, attr *dictionary.Attribute, 
 		p(w, `func `, ident, `_Lookup(p *radius.Packet) (value net.IP, err error) {`)
 	}
 	if vendor != nil {
-		p(w, `	a, ok  := _`, vendorIdent, `_LookupVendor(p, `, strconv.Itoa(attr.OID[0]), `)`)
+		if attr.UnderlyingType > 0 {
+			p(w, `	a, ok  := _`, vendorIdent, `_LookupExtVendor(p, `, strconv.Itoa(attr.OID[0]), `, `, DictExtType(attr.UnderlyingType), `)`)
+		} else {
+			p(w, `	a, ok  := _`, vendorIdent, `_LookupVendor(p, `, strconv.Itoa(attr.OID[0]), `)`)
+		}
 	} else {
 		p(w, `	a, ok  := p.Lookup(`, ident, `_Type)`)
 	}
@@ -659,7 +706,11 @@ func (g *Generator) genAttributeIPAddr(w io.Writer, attr *dictionary.Attribute, 
 		genNewTunnelPassword(w, `a`)
 	}
 	if vendor != nil {
-		p(w, `	return _`, vendorIdent, `_SetVendor(p, `, strconv.Itoa(attr.OID[0]), `, a)`)
+		if attr.UnderlyingType > 0 {
+			p(w, `	return _`, vendorIdent, `_SetExtVendor(p, `, strconv.Itoa(attr.OID[0]), `, `, DictExtType(attr.UnderlyingType), `, a)`)
+		} else {
+			p(w, `	return _`, vendorIdent, `_SetVendor(p, `, strconv.Itoa(attr.OID[0]), `, a)`)
+		}
 	} else {
 		p(w, `	p.Set(`, ident, `_Type, a)`)
 		p(w, `	return`)
@@ -669,7 +720,11 @@ func (g *Generator) genAttributeIPAddr(w io.Writer, attr *dictionary.Attribute, 
 	p(w)
 	p(w, `func `, ident, `_Del(p *radius.Packet) {`)
 	if vendor != nil {
-		p(w, `	_`, vendorIdent, `_DelVendor(p, `, strconv.Itoa(attr.OID[0]), `)`)
+		if attr.UnderlyingType > 0 {
+			p(w, `	_`, vendorIdent, `_DelExtVendor(p, `, strconv.Itoa(attr.OID[0]), `, `, DictExtType(attr.UnderlyingType), `)`)
+		} else {
+			p(w, `	_`, vendorIdent, `_DelVendor(p, `, strconv.Itoa(attr.OID[0]), `)`)
+		}
 	} else {
 		p(w, `	p.Attributes.Del(`, ident, `_Type)`)
 	}
@@ -691,7 +746,11 @@ func (g *Generator) genAttributeIFID(w io.Writer, attr *dictionary.Attribute, ve
 	p(w, `		return`)
 	p(w, `	}`)
 	if vendor != nil {
-		p(w, `	return _`, vendorIdent, `_AddVendor(p, `, strconv.Itoa(attr.OID[0]), `, a)`)
+		if attr.UnderlyingType > 0 {
+			p(w, `	return _`, vendorIdent, `_AddExtVendor(p, `, strconv.Itoa(attr.OID[0]), `, `, DictExtType(attr.UnderlyingType), ` ,a)`)
+		} else {
+			p(w, `	return _`, vendorIdent, `_AddVendor(p, `, strconv.Itoa(attr.OID[0]), `, a)`)
+		}
 	} else {
 		p(w, `	p.Add(`, ident, `_Type, a)`)
 		p(w, `	return`)
@@ -708,7 +767,11 @@ func (g *Generator) genAttributeIFID(w io.Writer, attr *dictionary.Attribute, ve
 	p(w, `func `, ident, `_Gets(p *radius.Packet) (values []net.HardwareAddr, err error) {`)
 	p(w, `	var i net.HardwareAddr`)
 	if vendor != nil {
-		p(w, `	for _, attr := range _`, vendorIdent, `_GetsVendor(p, `, strconv.Itoa(attr.OID[0]), `) {`)
+		if attr.UnderlyingType > 0 {
+			p(w, `	for _, attr := range _`, vendorIdent, `_GetsExtVendor(p, `, strconv.Itoa(attr.OID[0]), `, `, DictExtType(attr.UnderlyingType), `) {`)
+		} else {
+			p(w, `	for _, attr := range _`, vendorIdent, `_GetsVendor(p, `, strconv.Itoa(attr.OID[0]), `) {`)
+		}
 	} else {
 		p(w, `	for _, avp := range p.Attributes {`)
 		p(w, `		if avp.Type != `, ident, `_Type {`)
@@ -728,7 +791,11 @@ func (g *Generator) genAttributeIFID(w io.Writer, attr *dictionary.Attribute, ve
 	p(w)
 	p(w, `func `, ident, `_Lookup(p *radius.Packet) (value net.HardwareAddr, err error) {`)
 	if vendor != nil {
-		p(w, `	a, ok  := _`, vendorIdent, `_LookupVendor(p, `, strconv.Itoa(attr.OID[0]), `)`)
+		if attr.UnderlyingType > 0 {
+			p(w, `	a, ok  := _`, vendorIdent, `_LookupExtVendor(p, `, strconv.Itoa(attr.OID[0]), `, `, DictExtType(attr.UnderlyingType), `)`)
+		} else {
+			p(w, `	a, ok  := _`, vendorIdent, `_LookupVendor(p, `, strconv.Itoa(attr.OID[0]), `)`)
+		}
 	} else {
 		p(w, `	a, ok  := p.Lookup(`, ident, `_Type)`)
 	}
@@ -748,7 +815,11 @@ func (g *Generator) genAttributeIFID(w io.Writer, attr *dictionary.Attribute, ve
 	p(w, `		return`)
 	p(w, `	}`)
 	if vendor != nil {
-		p(w, `	return _`, vendorIdent, `_SetVendor(p, `, strconv.Itoa(attr.OID[0]), `, a)`)
+		if attr.UnderlyingType > 0 {
+			p(w, `	return _`, vendorIdent, `_SetExtVendor(p, `, strconv.Itoa(attr.OID[0]), `, `, DictExtType(attr.UnderlyingType), `, a)`)
+		} else {
+			p(w, `	return _`, vendorIdent, `_SetVendor(p, `, strconv.Itoa(attr.OID[0]), `, a)`)
+		}
 	} else {
 		p(w, `	p.Set(`, ident, `_Type, a)`)
 		p(w, `	return`)
@@ -758,7 +829,11 @@ func (g *Generator) genAttributeIFID(w io.Writer, attr *dictionary.Attribute, ve
 	p(w)
 	p(w, `func `, ident, `_Del(p *radius.Packet) {`)
 	if vendor != nil {
-		p(w, `	_`, vendorIdent, `_DelVendor(p, `, strconv.Itoa(attr.OID[0]), `)`)
+		if attr.UnderlyingType > 0 {
+			p(w, `	_`, vendorIdent, `_DelExtVendor(p, `, strconv.Itoa(attr.OID[0]), `, `, DictExtType(attr.UnderlyingType), `)`)
+		} else {
+			p(w, `	_`, vendorIdent, `_DelVendor(p, `, strconv.Itoa(attr.OID[0]), `)`)
+		}
 	} else {
 		p(w, `	p.Attributes.Del(`, ident, `_Type)`)
 	}
@@ -780,7 +855,11 @@ func (g *Generator) genAttributeIPv6Prefix(w io.Writer, attr *dictionary.Attribu
 	p(w, `		return`)
 	p(w, `	}`)
 	if vendor != nil {
-		p(w, `	return _`, vendorIdent, `_AddVendor(p, `, strconv.Itoa(attr.OID[0]), `, a)`)
+		if attr.UnderlyingType > 0 {
+			p(w, `	return _`, vendorIdent, `_AddExtVendor(p, `, strconv.Itoa(attr.OID[0]), `, `, DictExtType(attr.UnderlyingType), ` ,a)`)
+		} else {
+			p(w, `	return _`, vendorIdent, `_AddVendor(p, `, strconv.Itoa(attr.OID[0]), `, a)`)
+		}
 	} else {
 		p(w, `	p.Add(`, ident, `_Type, a)`)
 		p(w, `	return`)
@@ -797,7 +876,11 @@ func (g *Generator) genAttributeIPv6Prefix(w io.Writer, attr *dictionary.Attribu
 	p(w, `func `, ident, `_Gets(p *radius.Packet) (values []*net.IPNet, err error) {`)
 	p(w, `	var i *net.IPNet`)
 	if vendor != nil {
-		p(w, `	for _, attr := range _`, vendorIdent, `_GetsVendor(p, `, strconv.Itoa(attr.OID[0]), `) {`)
+		if attr.UnderlyingType > 0 {
+			p(w, `	for _, attr := range _`, vendorIdent, `_GetsExtVendor(p, `, strconv.Itoa(attr.OID[0]), `, `, DictExtType(attr.UnderlyingType), `) {`)
+		} else {
+			p(w, `	for _, attr := range _`, vendorIdent, `_GetsVendor(p, `, strconv.Itoa(attr.OID[0]), `) {`)
+		}
 	} else {
 		p(w, `	for _, avp := range p.Attributes {`)
 		p(w, `		if avp.Type != `, ident, `_Type {`)
@@ -817,7 +900,11 @@ func (g *Generator) genAttributeIPv6Prefix(w io.Writer, attr *dictionary.Attribu
 	p(w)
 	p(w, `func `, ident, `_Lookup(p *radius.Packet) (value *net.IPNet, err error) {`)
 	if vendor != nil {
-		p(w, `	a, ok  := _`, vendorIdent, `_LookupVendor(p, `, strconv.Itoa(attr.OID[0]), `)`)
+		if attr.UnderlyingType > 0 {
+			p(w, `	a, ok  := _`, vendorIdent, `_LookupExtVendor(p, `, strconv.Itoa(attr.OID[0]), `, `, DictExtType(attr.UnderlyingType), `)`)
+		} else {
+			p(w, `	a, ok  := _`, vendorIdent, `_LookupVendor(p, `, strconv.Itoa(attr.OID[0]), `)`)
+		}
 	} else {
 		p(w, `	a, ok  := p.Lookup(`, ident, `_Type)`)
 	}
@@ -837,7 +924,11 @@ func (g *Generator) genAttributeIPv6Prefix(w io.Writer, attr *dictionary.Attribu
 	p(w, `		return`)
 	p(w, `	}`)
 	if vendor != nil {
-		p(w, `	return _`, vendorIdent, `_SetVendor(p, `, strconv.Itoa(attr.OID[0]), `, a)`)
+		if attr.UnderlyingType > 0 {
+			p(w, `	return _`, vendorIdent, `_SetExtVendor(p, `, strconv.Itoa(attr.OID[0]), `, `, DictExtType(attr.UnderlyingType), `, a)`)
+		} else {
+			p(w, `	return _`, vendorIdent, `_SetVendor(p, `, strconv.Itoa(attr.OID[0]), `, a)`)
+		}
 	} else {
 		p(w, `	p.Set(`, ident, `_Type, a)`)
 		p(w, `	return`)
@@ -847,7 +938,11 @@ func (g *Generator) genAttributeIPv6Prefix(w io.Writer, attr *dictionary.Attribu
 	p(w)
 	p(w, `func `, ident, `_Del(p *radius.Packet) {`)
 	if vendor != nil {
-		p(w, `	_`, vendorIdent, `_DelVendor(p, `, strconv.Itoa(attr.OID[0]), `)`)
+		if attr.UnderlyingType > 0 {
+			p(w, `	_`, vendorIdent, `_DelExtVendor(p, `, strconv.Itoa(attr.OID[0]), `, `, DictExtType(attr.UnderlyingType), `)`)
+		} else {
+			p(w, `	_`, vendorIdent, `_DelVendor(p, `, strconv.Itoa(attr.OID[0]), `)`)
+		}
 	} else {
 		p(w, `	p.Attributes.Del(`, ident, `_Type)`)
 	}
@@ -869,7 +964,11 @@ func (g *Generator) genAttributeDate(w io.Writer, attr *dictionary.Attribute, ve
 	p(w, `		return`)
 	p(w, `	}`)
 	if vendor != nil {
-		p(w, `	return _`, vendorIdent, `_AddVendor(p, `, strconv.Itoa(attr.OID[0]), `, a)`)
+		if attr.UnderlyingType > 0 {
+			p(w, `	return _`, vendorIdent, `_AddExtVendor(p, `, strconv.Itoa(attr.OID[0]), `, `, DictExtType(attr.UnderlyingType), ` ,a)`)
+		} else {
+			p(w, `	return _`, vendorIdent, `_AddVendor(p, `, strconv.Itoa(attr.OID[0]), `, a)`)
+		}
 	} else {
 		p(w, `	p.Add(`, ident, `_Type, a)`)
 		p(w, `	return`)
@@ -886,7 +985,11 @@ func (g *Generator) genAttributeDate(w io.Writer, attr *dictionary.Attribute, ve
 	p(w, `func `, ident, `_Gets(p *radius.Packet) (values []time.Time, err error) {`)
 	p(w, `	var i time.Time`)
 	if vendor != nil {
-		p(w, `	for _, attr := range _`, vendorIdent, `_GetsVendor(p, `, strconv.Itoa(attr.OID[0]), `) {`)
+		if attr.UnderlyingType > 0 {
+			p(w, `	for _, attr := range _`, vendorIdent, `_GetsExtVendor(p, `, strconv.Itoa(attr.OID[0]), `, `, DictExtType(attr.UnderlyingType), `) {`)
+		} else {
+			p(w, `	for _, attr := range _`, vendorIdent, `_GetsVendor(p, `, strconv.Itoa(attr.OID[0]), `) {`)
+		}
 	} else {
 		p(w, `	for _, avp := range p.Attributes {`)
 		p(w, `		if avp.Type != `, ident, `_Type {`)
@@ -906,7 +1009,11 @@ func (g *Generator) genAttributeDate(w io.Writer, attr *dictionary.Attribute, ve
 	p(w)
 	p(w, `func `, ident, `_Lookup(p *radius.Packet) (value time.Time, err error) {`)
 	if vendor != nil {
-		p(w, `	a, ok  := _`, vendorIdent, `_LookupVendor(p, `, strconv.Itoa(attr.OID[0]), `)`)
+		if attr.UnderlyingType > 0 {
+			p(w, `	a, ok  := _`, vendorIdent, `_LookupExtVendor(p, `, strconv.Itoa(attr.OID[0]), `, `, DictExtType(attr.UnderlyingType), `)`)
+		} else {
+			p(w, `	a, ok  := _`, vendorIdent, `_LookupVendor(p, `, strconv.Itoa(attr.OID[0]), `)`)
+		}
 	} else {
 		p(w, `	a, ok  := p.Lookup(`, ident, `_Type)`)
 	}
@@ -926,7 +1033,11 @@ func (g *Generator) genAttributeDate(w io.Writer, attr *dictionary.Attribute, ve
 	p(w, `		return`)
 	p(w, `	}`)
 	if vendor != nil {
-		p(w, `	return _`, vendorIdent, `_SetVendor(p, `, strconv.Itoa(attr.OID[0]), `, a)`)
+		if attr.UnderlyingType > 0 {
+			p(w, `	return _`, vendorIdent, `_SetExtVendor(p, `, strconv.Itoa(attr.OID[0]), `, `, DictExtType(attr.UnderlyingType), `, a)`)
+		} else {
+			p(w, `	return _`, vendorIdent, `_SetVendor(p, `, strconv.Itoa(attr.OID[0]), `, a)`)
+		}
 	} else {
 		p(w, `	p.Set(`, ident, `_Type, a)`)
 		p(w, `	return`)
@@ -936,7 +1047,11 @@ func (g *Generator) genAttributeDate(w io.Writer, attr *dictionary.Attribute, ve
 	p(w)
 	p(w, `func `, ident, `_Del(p *radius.Packet) {`)
 	if vendor != nil {
-		p(w, `	_`, vendorIdent, `_DelVendor(p, `, strconv.Itoa(attr.OID[0]), `)`)
+		if attr.UnderlyingType > 0 {
+			p(w, `	_`, vendorIdent, `_DelExtVendor(p, `, strconv.Itoa(attr.OID[0]), `, `, DictExtType(attr.UnderlyingType), `)`)
+		} else {
+			p(w, `	_`, vendorIdent, `_DelVendor(p, `, strconv.Itoa(attr.OID[0]), `)`)
+		}
 	} else {
 		p(w, `	p.Attributes.Del(`, ident, `_Type)`)
 	}
@@ -1022,7 +1137,11 @@ func (g *Generator) genAttributeInteger(w io.Writer, attr *dictionary.Attribute,
 		genNewTunnelPassword(w, `a`)
 	}
 	if vendor != nil {
-		p(w, `	return _`, vendorIdent, `_AddVendor(p, `, strconv.Itoa(attr.OID[0]), `, a)`)
+		if attr.UnderlyingType > 0 {
+			p(w, `	return _`, vendorIdent, `_AddExtVendor(p, `, strconv.Itoa(attr.OID[0]), `, `, DictExtType(attr.UnderlyingType), ` ,a)`)
+		} else {
+			p(w, `	return _`, vendorIdent, `_AddVendor(p, `, strconv.Itoa(attr.OID[0]), `, a)`)
+		}
 	} else {
 		p(w, `	p.Add(`, ident, `_Type, a)`)
 		p(w, `	return`)
@@ -1072,7 +1191,11 @@ func (g *Generator) genAttributeInteger(w io.Writer, attr *dictionary.Attribute,
 		p(w, `	var i uint32`)
 	}
 	if vendor != nil {
-		p(w, `	for _, attr := range _`, vendorIdent, `_GetsVendor(p, `, strconv.Itoa(attr.OID[0]), `) {`)
+		if attr.UnderlyingType > 0 {
+			p(w, `	for _, attr := range _`, vendorIdent, `_GetsExtVendor(p, `, strconv.Itoa(attr.OID[0]), `, `, DictExtType(attr.UnderlyingType), `) {`)
+		} else {
+			p(w, `	for _, attr := range _`, vendorIdent, `_GetsVendor(p, `, strconv.Itoa(attr.OID[0]), `) {`)
+		}
 	} else {
 		p(w, `	for _, avp := range p.Attributes {`)
 		p(w, `		if avp.Type != `, ident, `_Type {`)
@@ -1127,7 +1250,11 @@ func (g *Generator) genAttributeInteger(w io.Writer, attr *dictionary.Attribute,
 		}
 	}
 	if vendor != nil {
-		p(w, `	a, ok  := _`, vendorIdent, `_LookupVendor(p, `, strconv.Itoa(attr.OID[0]), `)`)
+		if attr.UnderlyingType > 0 {
+			p(w, `	a, ok  := _`, vendorIdent, `_LookupExtVendor(p, `, strconv.Itoa(attr.OID[0]), `, `, DictExtType(attr.UnderlyingType), `)`)
+		} else {
+			p(w, `	a, ok  := _`, vendorIdent, `_LookupVendor(p, `, strconv.Itoa(attr.OID[0]), `)`)
+		}
 	} else {
 		p(w, `	a, ok  := p.Lookup(`, ident, `_Type)`)
 	}
@@ -1186,7 +1313,11 @@ func (g *Generator) genAttributeInteger(w io.Writer, attr *dictionary.Attribute,
 		p(w, `		}`)
 	}
 	if vendor != nil {
-		p(w, `	return _`, vendorIdent, `_SetVendor(p, `, strconv.Itoa(attr.OID[0]), `, a)`)
+		if attr.UnderlyingType > 0 {
+			p(w, `	return _`, vendorIdent, `_SetExtVendor(p, `, strconv.Itoa(attr.OID[0]), `, `, DictExtType(attr.UnderlyingType), `, a)`)
+		} else {
+			p(w, `	return _`, vendorIdent, `_SetVendor(p, `, strconv.Itoa(attr.OID[0]), `, a)`)
+		}
 	} else {
 		p(w, `	p.Set(`, ident, `_Type, a)`)
 		p(w, `	return`)
@@ -1196,7 +1327,11 @@ func (g *Generator) genAttributeInteger(w io.Writer, attr *dictionary.Attribute,
 	p(w)
 	p(w, `func `, ident, `_Del(p *radius.Packet) {`)
 	if vendor != nil {
-		p(w, `	_`, vendorIdent, `_DelVendor(p, `, strconv.Itoa(attr.OID[0]), `)`)
+		if attr.UnderlyingType > 0 {
+			p(w, `	_`, vendorIdent, `_DelExtVendor(p, `, strconv.Itoa(attr.OID[0]), `, `, DictExtType(attr.UnderlyingType), `)`)
+		} else {
+			p(w, `	_`, vendorIdent, `_DelVendor(p, `, strconv.Itoa(attr.OID[0]), `)`)
+		}
 	} else {
 		p(w, `	p.Attributes.Del(`, ident, `_Type)`)
 	}
@@ -1214,7 +1349,11 @@ func (g *Generator) genAttributeByte(w io.Writer, attr *dictionary.Attribute, ve
 	p(w, `func `, ident, `_Add(p *radius.Packet, value byte) (err error) {`)
 	p(w, `	a := radius.Attribute{value}`)
 	if vendor != nil {
-		p(w, `	return _`, vendorIdent, `_AddVendor(p, `, strconv.Itoa(attr.OID[0]), `, a)`)
+		if attr.UnderlyingType > 0 {
+			p(w, `	return _`, vendorIdent, `_AddExtVendor(p, `, strconv.Itoa(attr.OID[0]), `, `, DictExtType(attr.UnderlyingType), ` ,a)`)
+		} else {
+			p(w, `	return _`, vendorIdent, `_AddVendor(p, `, strconv.Itoa(attr.OID[0]), `, a)`)
+		}
 	} else {
 		p(w, `	p.Add(`, ident, `_Type, a)`)
 		p(w, `	return`)
@@ -1233,7 +1372,11 @@ func (g *Generator) genAttributeByte(w io.Writer, attr *dictionary.Attribute, ve
 		p(w, `	var tag byte`)
 	}
 	if vendor != nil {
-		p(w, `	for _, attr := range _`, vendorIdent, `_GetsVendor(p, `, strconv.Itoa(attr.OID[0]), `) {`)
+		if attr.UnderlyingType > 0 {
+			p(w, `	for _, attr := range _`, vendorIdent, `_GetsExtVendor(p, `, strconv.Itoa(attr.OID[0]), `, `, DictExtType(attr.UnderlyingType), `) {`)
+		} else {
+			p(w, `	for _, attr := range _`, vendorIdent, `_GetsVendor(p, `, strconv.Itoa(attr.OID[0]), `) {`)
+		}
 	} else {
 		p(w, `	for _, avp := range p.Attributes {`)
 		p(w, `		if avp.Type != `, ident, `_Type {`)
@@ -1253,7 +1396,11 @@ func (g *Generator) genAttributeByte(w io.Writer, attr *dictionary.Attribute, ve
 	p(w)
 	p(w, `func `, ident, `_Lookup(p *radius.Packet) (value byte, err error) {`)
 	if vendor != nil {
-		p(w, `	a, ok  := _`, vendorIdent, `_LookupVendor(p, `, strconv.Itoa(attr.OID[0]), `)`)
+		if attr.UnderlyingType > 0 {
+			p(w, `	a, ok  := _`, vendorIdent, `_LookupExtVendor(p, `, strconv.Itoa(attr.OID[0]), `, `, DictExtType(attr.UnderlyingType), `)`)
+		} else {
+			p(w, `	a, ok  := _`, vendorIdent, `_LookupVendor(p, `, strconv.Itoa(attr.OID[0]), `)`)
+		}
 	} else {
 		p(w, `	a, ok  := p.Lookup(`, ident, `_Type)`)
 	}
@@ -1273,7 +1420,11 @@ func (g *Generator) genAttributeByte(w io.Writer, attr *dictionary.Attribute, ve
 	p(w, `func `, ident, `_Set(p *radius.Packet, value byte) (err error) {`)
 	p(w, `	a := radius.Attribute{value}`)
 	if vendor != nil {
-		p(w, `	return _`, vendorIdent, `_SetVendor(p, `, strconv.Itoa(attr.OID[0]), `, a)`)
+		if attr.UnderlyingType > 0 {
+			p(w, `	return _`, vendorIdent, `_SetVendor(p, `, strconv.Itoa(attr.OID[0]), `, `, DictExtType(attr.UnderlyingType), `, a)`)
+		} else {
+			p(w, `	return _`, vendorIdent, `_SetVendor(p, `, strconv.Itoa(attr.OID[0]), `, a)`)
+		}
 	} else {
 		p(w, `	p.Set(`, ident, `_Type, a)`)
 		p(w, `	return`)
@@ -1283,7 +1434,11 @@ func (g *Generator) genAttributeByte(w io.Writer, attr *dictionary.Attribute, ve
 	p(w)
 	p(w, `func `, ident, `_Del(p *radius.Packet) {`)
 	if vendor != nil {
-		p(w, `	_`, vendorIdent, `_DelVendor(p, `, strconv.Itoa(attr.OID[0]), `)`)
+		if attr.UnderlyingType > 0 {
+			p(w, `	_`, vendorIdent, `_DelExtVendor(p, `, strconv.Itoa(attr.OID[0]), `, `, DictExtType(attr.UnderlyingType), `)`)
+		} else {
+			p(w, `	_`, vendorIdent, `_DelVendor(p, `, strconv.Itoa(attr.OID[0]), `)`)
+		}
 	} else {
 		p(w, `	p.Attributes.Del(`, ident, `_Type)`)
 	}
