@@ -58,7 +58,7 @@ func (p *Parser) parse(dict *Dictionary, parsedFiles map[string]struct{}, f File
 	s := bufio.NewScanner(f)
 
 	var vendorBlock *Vendor
-	var vendorFormat *AttributeType
+	var extendedFormat *AttributeType
 
 	lineNo := 1
 	for ; s.Scan(); lineNo++ {
@@ -78,7 +78,7 @@ func (p *Parser) parse(dict *Dictionary, parsedFiles map[string]struct{}, f File
 				err  error
 			)
 
-			attr, err = p.parseAttribute(fields)
+			attr, err = p.parseAttribute(fields, extendedFormat)
 
 			if err != nil {
 				return &ParseError{
@@ -154,8 +154,7 @@ func (p *Parser) parse(dict *Dictionary, parsedFiles map[string]struct{}, f File
 			dict.Vendors = append(dict.Vendors, vendor)
 
 		case (len(fields) == 2 || len(fields) == 3) && fields[0] == "BEGIN-VENDOR":
-			// TODO: support RFC 6929 extended VSA?
-
+			// TODO: support RFC 6929 extended VSA? Done?
 			if vendorBlock != nil {
 				return &ParseError{
 					Inner: &NestedVendorBlockError{},
@@ -175,18 +174,30 @@ func (p *Parser) parse(dict *Dictionary, parsedFiles map[string]struct{}, f File
 				}
 			}
 
-			vendorBlock = vendor
-
 			if len(fields) == 3 {
 				formatFields := strings.Split(fields[2], "=")
 				if formatFields[0] == "format" && len(formatFields) == 2 {
 					switch formatFields[1] {
 					case "Extended-Vendor-Specific-1":
-						vendorFormat = new(AttributeType)
-						*vendorFormat = AttributeExtendedVSA
+						extendedFormat = new(AttributeType)
+						*extendedFormat = AttributeExtendedVSA1
+						vendor.ExtendedVSA = true
+					case "Extended-Vendor-Specific-2":
+						extendedFormat = new(AttributeType)
+						*extendedFormat = AttributeExtendedVSA2
+						vendor.ExtendedVSA = true
+					case "Extended-Vendor-Specific-3":
+						extendedFormat = new(AttributeType)
+						*extendedFormat = AttributeExtendedVSA3
+						vendor.ExtendedVSA = true
+					case "Extended-Vendor-Specific-4":
+						extendedFormat = new(AttributeType)
+						*extendedFormat = AttributeExtendedVSA4
+						vendor.ExtendedVSA = true
 					}
 				}
 			}
+			vendorBlock = vendor
 
 		case len(fields) == 2 && fields[0] == "END-VENDOR":
 			if vendorBlock == nil {
@@ -207,7 +218,7 @@ func (p *Parser) parse(dict *Dictionary, parsedFiles map[string]struct{}, f File
 			}
 
 			vendorBlock = nil
-			vendorFormat = nil
+			extendedFormat = nil
 
 		case len(fields) == 2 && fields[0] == "$INCLUDE":
 			if vendorBlock != nil {
@@ -315,21 +326,7 @@ func parseOID(s string) OID {
 	return o
 }
 
-func (p *Parser) parseExtendedAttribute(f []string, extendedType AttributeType) (*Attribute, error) {
-	attr, err := p.parseAttribute(f)
-	if err != nil {
-		return nil, err
-	}
-
-	switch extendedType {
-	case AttributeExtendedVSA:
-		attr.OID = OID(append([]int{int(extendedType)}, []int(attr.OID)...))
-
-	}
-	return attr, nil
-}
-
-func (p *Parser) parseAttribute(f []string) (*Attribute, error) {
+func (p *Parser) parseAttribute(f []string, extendedType *AttributeType) (*Attribute, error) {
 	// 4 <= len(f) <= 5
 
 	oid := parseOID(f[2])
@@ -342,6 +339,24 @@ func (p *Parser) parseAttribute(f []string) (*Attribute, error) {
 	attr := &Attribute{
 		Name: f[1],
 		OID:  oid,
+	}
+
+	if len(oid) == 1 && extendedType != nil {
+		switch *extendedType {
+		case AttributeExtendedVSA1:
+			//			attr.OID = OID(append([]int{int(*extendedType)}, []int(attr.OID)...))
+			attr.UnderlyingType = *extendedType
+		case AttributeExtendedVSA2:
+			//			attr.OID = OID(append([]int{int(*extendedType)}, []int(attr.OID)...))
+			attr.UnderlyingType = *extendedType
+		case AttributeExtendedVSA3:
+			//			attr.OID = OID(append([]int{int(*extendedType)}, []int(attr.OID)...))
+			attr.UnderlyingType = *extendedType
+		case AttributeExtendedVSA4:
+			//			attr.OID = OID(append([]int{int(*extendedType)}, []int(attr.OID)...))
+			attr.UnderlyingType = *extendedType
+
+		}
 	}
 
 	switch {
@@ -377,12 +392,30 @@ func (p *Parser) parseAttribute(f []string) (*Attribute, error) {
 		attr.Type = AttributeInteger64
 	case strings.EqualFold(f[3], "vsa"):
 		attr.Type = AttributeVSA
-	case strings.EqualFold(f[3], "evs"):
-		attr.Type = AttributeExtendedVSA
-	case strings.EqualFold(f[3], "extended"):
-		attr.Type = AttributeExtended
-	case strings.EqualFold(f[3], "long-extended"):
-		attr.Type = AttributeLongExtended
+	case strings.EqualFold(f[3], "evs1"):
+		attr.Type = AttributeExtendedVSA1
+	case strings.EqualFold(f[3], "evs2"):
+		attr.Type = AttributeExtendedVSA2
+	case strings.EqualFold(f[3], "evs3"):
+		attr.Type = AttributeExtendedVSA3
+	case strings.EqualFold(f[3], "evs4"):
+		attr.Type = AttributeExtendedVSA4
+	case strings.EqualFold(f[3], "evs5"):
+		attr.Type = AttributeLongExtendedVSA5
+	case strings.EqualFold(f[3], "evs6"):
+		attr.Type = AttributeLongExtendedVSA6
+	case strings.EqualFold(f[3], "extended1"):
+		attr.Type = AttributeExtended1
+	case strings.EqualFold(f[3], "extended2"):
+		attr.Type = AttributeExtended2
+	case strings.EqualFold(f[3], "extended3"):
+		attr.Type = AttributeExtended3
+	case strings.EqualFold(f[3], "extended4"):
+		attr.Type = AttributeExtended4
+	case strings.EqualFold(f[3], "long-extended5"):
+		attr.Type = AttributeLongExtended5
+	case strings.EqualFold(f[3], "long-extended6"):
+		attr.Type = AttributeLongExtended6
 	case strings.EqualFold(f[3], "ether"):
 		attr.Type = AttributeEther
 	case strings.EqualFold(f[3], "abinary"):

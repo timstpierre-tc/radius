@@ -106,16 +106,24 @@ func TestParserExtended(t *testing.T) {
 	}
 
 	expected := &Dictionary{
-		Attributes: []*Attribute{
-			{
-				Name: "Test-Vendor-Name",
-				OID:  OID{11.5},
-				Type: AttributeString,
-			},
-			{
-				Name: "Test-Vendor-IPv6",
-				OID:  OID{6},
-				Type: AttributeIPv6Addr,
+		Vendors: []*Vendor{
+			&Vendor{
+				Name:   "Test",
+				Number: 32473,
+				Attributes: []*Attribute{
+					{
+						Name:           "Test-Vendor-Name",
+						OID:            OID{5},
+						Type:           AttributeString,
+						UnderlyingType: AttributeExtendedVSA1,
+					},
+					{
+						Name:           "Test-Vendor-IPv6",
+						OID:            OID{6},
+						Type:           AttributeIPv6Addr,
+						UnderlyingType: AttributeExtendedVSA1,
+					},
+				},
 			},
 		},
 	}
@@ -148,7 +156,7 @@ func dictString(d *Dictionary) string {
 
 	b.WriteString("\tAttributes:\n")
 	for _, attr := range d.Attributes {
-		b.WriteString(fmt.Sprintf("\t\t%q %q %q %#v %#v\n", attr.Name, attr.OID, attr.Type, attr.FlagHasTag, attr.FlagEncrypt))
+		b.WriteString(fmt.Sprintf("\t\t%q %q %q %q %#v %#v\n", attr.Name, attr.OID, attr.Type, attr.UnderlyingType, attr.FlagHasTag, attr.FlagEncrypt))
 	}
 
 	b.WriteString("\tValues:\n")
@@ -162,7 +170,7 @@ func dictString(d *Dictionary) string {
 
 		b.WriteString("\t\tAttributes:\n")
 		for _, attr := range vendor.Attributes {
-			b.WriteString(fmt.Sprintf("\t\t%q %q %q %#v %#v\n", attr.Name, attr.OID, attr.Type, attr.FlagHasTag, attr.FlagEncrypt))
+			b.WriteString(fmt.Sprintf("\t\t%q %q %q %q %#v %#v\n", attr.Name, attr.OID, attr.Type, attr.UnderlyingType, attr.FlagHasTag, attr.FlagEncrypt))
 		}
 
 		b.WriteString("\t\tValues:\n")

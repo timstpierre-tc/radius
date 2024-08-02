@@ -58,9 +58,18 @@ const (
 	AttributeInteger64
 
 	AttributeVSA
-	AttributeExtendedVSA
-	AttributeExtended
-	AttributeLongExtended
+	AttributeExtendedVSA1
+	AttributeExtendedVSA2
+	AttributeExtendedVSA3
+	AttributeExtendedVSA4
+	AttributeLongExtendedVSA5
+	AttributeLongExtendedVSA6
+	AttributeExtended1
+	AttributeExtended2
+	AttributeExtended3
+	AttributeExtended4
+	AttributeLongExtended5
+	AttributeLongExtended6
 
 	AttributeEther
 	AttributeABinary
@@ -94,12 +103,31 @@ func (t AttributeType) String() string {
 
 	case AttributeVSA:
 		return "vsa"
-	case AttributeExtendedVSA:
-		return "evs"
-	case AttributeExtended:
-		return "extended"
-	case AttributeLongExtended:
-		return "long-extended"
+	case AttributeExtendedVSA1:
+		return "evs1"
+	case AttributeExtendedVSA2:
+		return "evs2"
+	case AttributeExtendedVSA3:
+		return "evs3"
+	case AttributeExtendedVSA4:
+		return "evs4"
+	case AttributeLongExtendedVSA5:
+		return "evs5"
+	case AttributeLongExtendedVSA6:
+		return "evs6"
+
+	case AttributeExtended1:
+		return "extended1"
+	case AttributeExtended2:
+		return "extended2"
+	case AttributeExtended3:
+		return "extended3"
+	case AttributeExtended4:
+		return "extended4"
+	case AttributeLongExtended5:
+		return "long-extended5"
+	case AttributeLongExtended6:
+		return "long-extended6"
 
 	case AttributeEther:
 		return "ether"
@@ -155,9 +183,10 @@ const (
 )
 
 type Attribute struct {
-	Name string
-	OID  OID
-	Type AttributeType
+	Name           string
+	OID            OID
+	Type           AttributeType
+	UnderlyingType AttributeType
 
 	Size IntFlag
 
@@ -232,8 +261,9 @@ type Vendor struct {
 	TypeOctets   *int
 	LengthOctets *int
 
-	Attributes []*Attribute
-	Values     []*Value
+	Attributes  []*Attribute
+	Values      []*Value
+	ExtendedVSA bool
 }
 
 func (v *Vendor) GetTypeOctets() int {
